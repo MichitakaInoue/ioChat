@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>IO Chat</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <style media="screen">
+      body{
+        margin-top: 30px;
+      }
+      #messageArea{
+        display:none;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <div id="userFormArea" class="row">
+        <div class="col-md-12">
+          <form class="" id="userForm">
+            <div class="form-group">
+              <label>Enter Username</label>
+              <input class="form-controll" id="username" type="" name="" value=""><br/>
+              <input type="submit" class="btn btn-primary" name="" value="Login">
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="messageArea" class="row">
+        <div class="col-md-4">
+          <div class="well">
+              <h3>online Users</h3>
+              <ul class="list-group" id="users"></ul>
+          </div>
+        </div>
+
+        <div class="col-md-8">
+          <div class="chat" id="chat"></div>
+
+          <form class="" id="messageForm">
+            <div class="form-group">
+              <label>Enter Message</label>
+              <textarea name="" id="message" class="form-controll" style="width:100%;"></textarea><br />
+              <input type="submit" class="btn btn-primary" name="" value="Send Message">
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+
+
+    <script>
+       $(function(){
+          let socket = io.connect();
+          let $messageForm = $('#messageForm');
+          let $message = $('#message');
+          let $chat = $('#chat');
+          let $messageArea = $('#messageArea');
+          let $messageFormArea = $('#messageFormArea');
+          let $userFormArea = $('#userFormArea');
+          let $userForm = $('#userForm');
+          let $users = $('#users');
+          let $username = $('#username');
+
+
+          $messageForm.submit(function(e){
+            e.preventDefault();
+            console.log('messageForm.submit');
+            //server.jsで定義したemmitを仕様すること
+            socket.emit('send message', $message.val());
+            $message.val('');
+          });
+
+          //テキストエリアの上の方にメッセージを出す
+          socket.on('new message', function(data){
+            console.log('new message');
+            console.log('このときのmsg', data.msg);
+            $chat.append('<div class="well"><strong>'+data.user+'</strong>:'+data.msg+'</div>');
+          });
+
+          //ユーザーフォームにsubmitがあったらログインして表示させること
+          $userForm.submit(function(e){
+            console.log('userForm.submit');
+            e.preventDefault();
+            socket.emit('new user', $username.val(), function(data){
+              if(data){
+                console.log('userForm.submit: dataあり')
+                $userFormArea.hide();
+                $messageArea.show();
+              }
+            });
+            $username.val('');
+          });
+
+          socket.on('get users', function(data){
+            console.log('get users', data);//名前
+            let html = '';
+            for(i = 0; i < data.length; i++){
+              html += '<li class="list-group-item">'+data[i]+'</li>';
+            }
+            $users.html(html);
+          });
+
+       })
+    </script>
+  </body>
+</html>
